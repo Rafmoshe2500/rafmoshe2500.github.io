@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.twinstar.app",
+      "sha256_cert_fingerprints": [
+        "1C:A7:A1:15:13:71:46:BD:5B:B2:F1:9C:1F:63:58:1D:ED:F0:25:F7:1A:30:B8:7E:C1:FB:8B:05:42:58:EF:81"
+      ]
+    }
+  }
+]

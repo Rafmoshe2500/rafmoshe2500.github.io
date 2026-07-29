@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Twinstar Online Room</title>
+<meta name="description" content="Join a live Twinstar online match. This invite is one-time — first to join wins the seat.">
+<meta property="og:title" content="Twinstar Online Room">
+<meta property="og:description" content="Join a live Twinstar online match. This invite is one-time — first to join wins the seat.">
+<meta property="og:type" content="website">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #05060f;
+    color: #e8ecff;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow-x: hidden;
+  }
+  body {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    min-height: 100%; padding: 32px 20px; text-align: center;
+  }
+  h1 { font-size: clamp(22px, 6vw, 30px); margin: 0 0 6px; }
+  p.sub { color: #9aa3c7; margin: 0 0 20px; font-size: 14px; max-width: 42ch; }
+  .live-banner {
+    display: inline-flex; align-items: center; gap: 8px;
+    background: #201338; border: 1px solid #4c2f7a; color: #d9b8ff;
+    border-radius: 999px; padding: 6px 14px; font-size: 12px; font-weight: 700;
+    margin-bottom: 20px; letter-spacing: 0.5px;
+  }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #a78bfa; }
+  .code-box {
+    font-family: "SF Mono", "Consolas", monospace;
+    font-size: clamp(28px, 10vw, 44px);
+    letter-spacing: 4px;
+    font-weight: 700;
+    background: #10132a;
+    border: 1px solid #2a2f56;
+    border-radius: 16px;
+    padding: 20px 28px;
+    margin: 0 0 20px;
+    color: #7dd3fc;
+    max-width: 90vw;
+  }
+  .row { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 340px; }
+  button, a.btn {
+    font: inherit;
+    padding: 14px 20px;
+    border-radius: 14px;
+    border: none;
+    font-weight: 700;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    display: block;
+  }
+  .primary { background: #7dd3fc; color: #05060f; }
+  .secondary { background: #1b1f42; color: #e8ecff; border: 1px solid #2a2f56; }
+  .play-link { color: #9aa3c7; font-size: 13px; margin-top: 22px; text-decoration: underline; }
+  .hint { font-size: 12px; color: #6b74a0; margin-top: 10px; min-height: 16px; }
+  .note { font-size: 12px; color: #6b74a0; margin-top: 4px; max-width: 40ch; }
+  .error-state h1 { color: #e8ecff; }
+</style>
+</head>
+<body>
+  <div id="app">
+    <h1>Loading room&hellip;</h1>
+  </div>
+
+  <script>
+    (function () {
+      var MAX_LEN = 8; // headroom above the 5-char code
+
+      function sanitize(raw) {
+        if (typeof raw !== 'string') return '';
+        var trimmed = raw.slice(0, MAX_LEN);
+        var match = trimmed.match(/^[0-9A-Za-z-]+$/);
+        return match ? trimmed : '';
+      }
+
+      function getParam(name) {
+        try {
+          var params = new URLSearchParams(window.location.search);
+          return params.get(name);
+        } catch (e) {
+          return null;
+        }
+      }
+
+      function renderError(root) {
+        root.innerHTML = '';
+        root.className = 'error-state';
+        var h1 = document.createElement('h1');
+        h1.textContent = 'This link is incomplete';
+        var p = document.createElement('p');
+        p.className = 'sub';
+        p.textContent = "We couldn't find a room code in this link. Ask your friend to resend it.";
+        var a = document.createElement('a');
+        a.className = 'btn primary';
+        a.href = 'https://play.google.com/store/apps/details?id=com.twinstar.app';
+        a.textContent = 'Get Twinstar on Google Play';
+        root.appendChild(h1);
+        root.appendChild(p);
+        root.appendChild(a);
+      }
+
+      function renderRoom(root, code) {
+        root.innerHTML = '';
+        var banner = document.createElement('div');
+        banner.className = 'live-banner';
+        var dot = document.createElement('span');
+        dot.className = 'live-dot';
+        banner.appendChild(dot);
+        banner.appendChild(document.createTextNode('LIVE · ONE-TIME INVITE'));
+
+        var h1 = document.createElement('h1');
+        h1.textContent = "You're invited to a match!";
+        var sub = document.createElement('p');
+        sub.className = 'sub';
+        sub.textContent = 'Copy the room code and paste it into Twinstar to join.';
+
+        var codeBox = document.createElement('div');
+        codeBox.className = 'code-box';
+        codeBox.textContent = code;
+
+        var row = document.createElement('div');
+        row.className = 'row';
+
+        var copyBtn = document.createElement('button');
+        copyBtn.className = 'primary';
+        copyBtn.type = 'button';
+        copyBtn.textContent = 'COPY CODE';
+
+        var hint = document.createElement('div');
+        hint.className = 'hint';
+
+        copyBtn.addEventListener('click', function () {
+          copyToClipboard(code, function (ok) {
+            hint.textContent = ok ? 'Copied!' : 'Could not copy — copy it manually.';
+          });
+        });
+
+        var openBtn = document.createElement('a');
+        openBtn.className = 'btn secondary';
+        openBtn.href = 'twinstar://r/' + encodeURIComponent(code);
+        openBtn.textContent = 'OPEN IN TWINSTAR';
+
+        row.appendChild(copyBtn);
+        row.appendChild(openBtn);
+
+        var note = document.createElement('p');
+        note.className = 'note';
+        note.textContent = 'This invite only works while the host is waiting, and only for the first person who joins. If it fails, ask for a fresh link.';
+
+        var playLink = document.createElement('a');
+        playLink.className = 'play-link';
+        playLink.href = 'https://play.google.com/store/apps/details?id=com.twinstar.app';
+        playLink.textContent = "Don't have Twinstar? Get it on Google Play";
+
+        root.appendChild(banner);
+        root.appendChild(h1);
+        root.appendChild(sub);
+        root.appendChild(codeBox);
+        root.appendChild(row);
+        root.appendChild(hint);
+        root.appendChild(note);
+        root.appendChild(playLink);
+      }
+
+      function copyToClipboard(text, cb) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(
+            function () { cb(true); },
+            function () { fallbackCopy(text, cb); }
+          );
+        } else {
+          fallbackCopy(text, cb);
+        }
+      }
+
+      function fallbackCopy(text, cb) {
+        try {
+          var ta = document.createElement('textarea');
+          ta.value = text;
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          var ok = document.execCommand('copy');
+          document.body.removeChild(ta);
+          cb(ok);
+        } catch (e) {
+          cb(false);
+        }
+      }
+
+      var root = document.getElementById('app');
+      var raw = getParam('k');
+      var code = sanitize(raw);
+      if (!code) {
+        renderError(root);
+      } else {
+        renderRoom(root, code);
+      }
+    })();
+  </script>
+</body>
+</html>
