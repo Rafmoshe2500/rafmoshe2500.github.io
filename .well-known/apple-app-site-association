@@ -1,0 +1,13 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["2T798M925A.com.twinstar.app"],
+        "components": [
+          { "/": "/c/*", "comment": "Ghost Challenge deep link" },
+          { "/": "/r/*", "comment": "Online room invite deep link" }
+        ]
+      }
+    ]
+  }
+}
