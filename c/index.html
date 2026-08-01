@@ -54,6 +54,7 @@
   .secondary { background: #1b1f42; color: #e8ecff; border: 1px solid #2a2f56; }
   .play-link { color: #9aa3c7; font-size: 13px; margin-top: 22px; text-decoration: underline; }
   .hint { font-size: 12px; color: #6b74a0; margin-top: 10px; min-height: 16px; }
+  .note { font-size: 13px; color: #9aa3c7; margin: 14px 0 0; max-width: 34ch; line-height: 1.5; }
   .error-state h1 { color: #e8ecff; }
 </style>
 </head>
@@ -89,6 +90,25 @@
         }
       }
 
+      // The `twinstar://` scheme is registered on ANDROID ONLY today. The iOS
+      // plugin that would register CFBundleURLTypes is written but its binaries
+      // are not vendored yet, so on an iPhone that URL has no handler at all and
+      // Safari answers with a modal "Safari cannot open the page because the
+      // address is invalid" — which is exactly what an owner hit in the wild.
+      // So the scheme button is rendered ONLY where it can actually work; every
+      // other platform gets the copy-and-paste route, which works everywhere.
+      // When the iOS plugin ships, delete isIOS() and let iOS through here too.
+      function isIOS() {
+        var ua = navigator.userAgent || '';
+        // iPadOS 13+ lies and reports as Macintosh; the touch probe catches it.
+        return /iPad|iPhone|iPod/.test(ua) ||
+          (/Macintosh/.test(ua) && typeof document.ontouchend !== 'undefined');
+      }
+
+      function schemeSupported() {
+        return !isIOS();
+      }
+
       function renderError(root) {
         root.innerHTML = '';
         root.className = 'error-state';
@@ -97,13 +117,15 @@
         var p = document.createElement('p');
         p.className = 'sub';
         p.textContent = "We couldn't find a challenge code in this link. Ask your friend to resend it.";
-        var a = document.createElement('a');
-        a.className = 'btn primary';
-        a.href = 'https://play.google.com/store/apps/details?id=com.twinstar.app';
-        a.textContent = 'Get Twinstar on Google Play';
         root.appendChild(h1);
         root.appendChild(p);
-        root.appendChild(a);
+        if (!isIOS()) {
+          var a = document.createElement('a');
+          a.className = 'btn primary';
+          a.href = 'https://play.google.com/store/apps/details?id=com.twinstar.app';
+          a.textContent = 'Get Twinstar on Google Play';
+          root.appendChild(a);
+        }
       }
 
       function renderChallenge(root, code) {
@@ -135,25 +157,40 @@
           });
         });
 
-        var openBtn = document.createElement('a');
-        openBtn.className = 'btn secondary';
-        openBtn.href = 'twinstar://c/' + encodeURIComponent(code);
-        openBtn.textContent = 'OPEN IN TWINSTAR';
-
         row.appendChild(copyBtn);
-        row.appendChild(openBtn);
 
-        var playLink = document.createElement('a');
-        playLink.className = 'play-link';
-        playLink.href = 'https://play.google.com/store/apps/details?id=com.twinstar.app';
-        playLink.textContent = "Don't have Twinstar? Get it on Google Play";
+        if (schemeSupported()) {
+          var openBtn = document.createElement('a');
+          openBtn.className = 'btn secondary';
+          openBtn.href = 'twinstar://c/' + encodeURIComponent(code);
+          openBtn.textContent = 'OPEN IN TWINSTAR';
+          row.appendChild(openBtn);
+        } else {
+          sub.textContent = 'Copy the code below, then open Twinstar and paste it in.';
+        }
 
         root.appendChild(h1);
         root.appendChild(sub);
         root.appendChild(codeBox);
         root.appendChild(row);
         root.appendChild(hint);
-        root.appendChild(playLink);
+
+        if (!schemeSupported()) {
+          var steps = document.createElement('p');
+          steps.className = 'note';
+          steps.textContent = 'In Twinstar: MODE SELECT → GHOST CHALLENGE → PASTE.';
+          root.appendChild(steps);
+        }
+
+        // Play Store only where the Play Store is the right store. On iPhone this
+        // used to send people to an Android listing they cannot install from.
+        if (!isIOS()) {
+          var playLink = document.createElement('a');
+          playLink.className = 'play-link';
+          playLink.href = 'https://play.google.com/store/apps/details?id=com.twinstar.app';
+          playLink.textContent = "Don't have Twinstar? Get it on Google Play";
+          root.appendChild(playLink);
+        }
       }
 
       function copyToClipboard(text, cb) {
