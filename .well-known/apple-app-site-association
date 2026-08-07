@@ -4,7 +4,9 @@
       {
         "appIDs": ["2T798M925A.com.twinstar.app"],
         "components": [
+          { "/": "/c/", "comment": "Ghost Challenge deep link (exact landing path)" },
           { "/": "/c/*", "comment": "Ghost Challenge deep link" },
+          { "/": "/r/", "comment": "Online room invite deep link (exact landing path)" },
           { "/": "/r/*", "comment": "Online room invite deep link" }
         ]
       }

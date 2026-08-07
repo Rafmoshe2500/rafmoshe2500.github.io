@@ -90,23 +90,14 @@
         }
       }
 
-      // The `twinstar://` scheme is registered on ANDROID ONLY today. The iOS
-      // plugin that would register CFBundleURLTypes is written but its binaries
-      // are not vendored yet, so on an iPhone that URL has no handler at all and
-      // Safari answers with a modal "Safari cannot open the page because the
-      // address is invalid" — which is exactly what an owner hit in the wild.
-      // So the scheme button is rendered ONLY where it can actually work; every
-      // other platform gets the copy-and-paste route, which works everywhere.
-      // When the iOS plugin ships, delete isIOS() and let iOS through here too.
+      // isIOS() now decides ONE thing only: which app store (if any) is the
+      // right one to advertise. It no longer gates the scheme button — see the
+      // OPEN IN TWINSTAR block below for why that gate was removed.
       function isIOS() {
         var ua = navigator.userAgent || '';
         // iPadOS 13+ lies and reports as Macintosh; the touch probe catches it.
         return /iPad|iPhone|iPod/.test(ua) ||
           (/Macintosh/.test(ua) && typeof document.ontouchend !== 'undefined');
-      }
-
-      function schemeSupported() {
-        return !isIOS();
       }
 
       function renderError(root) {
@@ -159,15 +150,30 @@
 
         row.appendChild(copyBtn);
 
-        if (schemeSupported()) {
-          var openBtn = document.createElement('a');
-          openBtn.className = 'btn secondary';
-          openBtn.href = 'twinstar://c/' + encodeURIComponent(code);
-          openBtn.textContent = 'OPEN IN TWINSTAR';
-          row.appendChild(openBtn);
-        } else {
-          sub.textContent = 'Copy the code below, then open Twinstar and paste it in.';
-        }
+        // The `twinstar://` scheme is registered on BOTH platforms as of
+        // 2026-08-02: Android via addons/TwinstarDeepLink's <activity-alias>,
+        // iOS via the TwinstarLink plugin's CFBundleURLTypes (see
+        // ios/plugins/twinstar_link.gdip; plugins/TwinstarLink=true in both
+        // export presets, on TestFlight since build 59).
+        //
+        // This button used to be hidden on iOS, because an iPhone with no
+        // handler answers with a modal "Safari cannot open the page because the
+        // address is invalid" — an owner hit that in the wild. That gate went
+        // stale the moment the iOS plugin shipped, and it was itself the reason
+        // an iPhone recipient had no way into the app at all. Keep this button
+        // on iOS even after Universal Links land: this page is still what a
+        // recipient sees when the app is not installed, and when a chat client's
+        // in-app browser swallows the Universal Link instead of honouring it.
+        //
+        // Residual risk, accepted and mitigated: an iOS visitor who does NOT
+        // have Twinstar installed still sees that modal. COPY CODE stays the
+        // primary CTA above this button, and the paste steps stay on screen for
+        // iOS below it, so the modal is recoverable instead of a dead end.
+        var openBtn = document.createElement('a');
+        openBtn.className = 'btn secondary';
+        openBtn.href = 'twinstar://c/' + encodeURIComponent(code);
+        openBtn.textContent = 'OPEN IN TWINSTAR';
+        row.appendChild(openBtn);
 
         root.appendChild(h1);
         root.appendChild(sub);
@@ -175,10 +181,13 @@
         root.appendChild(row);
         root.appendChild(hint);
 
-        if (!schemeSupported()) {
+        // Kept on iOS as the recovery path for the "address is invalid" modal
+        // described above. Android's scheme handler is device-proven, so it
+        // stays hidden there — unchanged behaviour on that platform.
+        if (isIOS()) {
           var steps = document.createElement('p');
           steps.className = 'note';
-          steps.textContent = 'In Twinstar: MODE SELECT → GHOST CHALLENGE → PASTE.';
+          steps.textContent = 'Nothing happened? Copy the code above, then in Twinstar: MODE SELECT → GHOST CHALLENGE → PASTE.';
           root.appendChild(steps);
         }
 
